@@ -1,7 +1,9 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { products, categories } from "@/data/products";
+import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
+import { listCategories } from "@/lib/supabaseApi";
 import ProductCard from "@/components/ProductCard";
+import { useProducts } from "@/hooks/use-products";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 12 },
@@ -11,7 +13,13 @@ const fadeInUp = {
 };
 
 export default function ShopPage() {
-  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeCategory = searchParams.get("category") || "all";
+  const { data: products = [] } = useProducts();
+  const { data: dbCategories = [] } = useQuery({
+    queryKey: ["admin-collections"],
+    queryFn: listCategories,
+  });
 
   const filtered = activeCategory === "all"
     ? products
@@ -26,9 +34,9 @@ export default function ShopPage() {
         </motion.div>
 
         {/* Category Filter */}
-        <motion.div {...fadeInUp} className="flex justify-center gap-6 mb-14">
+        <motion.div {...fadeInUp} className="flex justify-center gap-6 mb-14 flex-wrap">
           <button
-            onClick={() => setActiveCategory("all")}
+            onClick={() => setSearchParams({})}
             className={`text-[11px] uppercase tracking-[0.2em] pb-1 transition-colors ${
               activeCategory === "all"
                 ? "text-foreground border-b border-foreground"
@@ -37,10 +45,10 @@ export default function ShopPage() {
           >
             All
           </button>
-          {categories.map((cat) => (
+          {dbCategories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
+              onClick={() => setSearchParams({ category: cat.id })}
               className={`text-[11px] uppercase tracking-[0.2em] pb-1 transition-colors ${
                 activeCategory === cat.id
                   ? "text-foreground border-b border-foreground"
@@ -58,6 +66,11 @@ export default function ShopPage() {
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
+        {filtered.length === 0 && (
+          <div className="py-20 text-center text-muted-foreground italic text-sm">
+            No products found in this collection.
+          </div>
+        )}
       </div>
     </main>
   );

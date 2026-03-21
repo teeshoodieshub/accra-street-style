@@ -97,4 +97,13 @@
     0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
   }
+
+  /* Custom Utilities */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
 }
