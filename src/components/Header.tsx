@@ -19,7 +19,7 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
       <div className="container flex flex-col items-center py-4">
-        <Link to="/" className="font-serif text-2xl md:text-3xl font-semibold tracking-wide mb-3">
+        <Link to="/" className="font-serif text-2xl md:text-3xl font-semibold tracking-wide mb-3 text-lift-hover">
           TEES & HOODIES
         </Link>
 
@@ -29,7 +29,7 @@ export default function Header() {
             <Link
               key={link.to}
               to={link.to}
-              className={`text-[11px] uppercase tracking-[0.2em] transition-colors hover:text-foreground ${
+              className={`text-[11px] uppercase tracking-[0.2em] transition-colors hover:text-foreground link-underline-fx ${
                 location.pathname === link.to ? "text-foreground font-medium" : "text-muted-foreground"
               }`}
             >
@@ -78,7 +78,7 @@ export default function Header() {
                   key={link.to}
                   to={link.to}
                   onClick={() => setMobileOpen(false)}
-                  className="text-[11px] uppercase tracking-[0.2em] py-2 text-muted-foreground hover:text-foreground"
+                  className="text-[11px] uppercase tracking-[0.2em] py-2 text-muted-foreground hover:text-foreground link-underline-fx"
                 >
                   {link.label}
                 </Link>

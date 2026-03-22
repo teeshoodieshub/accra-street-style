@@ -93,8 +93,67 @@
   .marquee-track {
     animation: marquee 20s linear infinite;
   }
+  .text-gradient-animated {
+    background: linear-gradient(
+      110deg,
+      hsl(var(--primary-foreground) / 0.85) 0%,
+      hsl(var(--accent) / 1) 35%,
+      hsl(var(--primary-foreground) / 0.9) 70%,
+      hsl(var(--accent) / 0.9) 100%
+    );
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: text-gradient-shift 7s linear infinite;
+  }
+  .text-glow-soft {
+    text-shadow: 0 0 18px hsl(var(--accent) / 0.22);
+  }
+  .text-lift-hover {
+    transition: transform 220ms ease, text-shadow 220ms ease, color 220ms ease;
+  }
+  .text-lift-hover:hover {
+    transform: translateY(-1px);
+    text-shadow: 0 6px 16px hsl(var(--foreground) / 0.16);
+  }
+  .link-underline-fx {
+    position: relative;
+  }
+  .link-underline-fx::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -4px;
+    width: 0;
+    height: 1px;
+    background: currentColor;
+    transition: width 220ms ease;
+  }
+  .link-underline-fx:hover::after {
+    width: 100%;
+  }
   @keyframes marquee {
     0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
+  }
+  @keyframes text-gradient-shift {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 220% 50%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .text-gradient-animated {
+      animation: none;
+    }
+  }
+
+  /* Custom Utilities */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
   }
 }

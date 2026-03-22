@@ -1,9 +1,16 @@
-import { useCart } from "@/context/CartContext";
+﻿import { useCart } from "@/context/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Minus, Plus, ShoppingBag } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function CartDrawer() {
   const { items, isCartOpen, setIsCartOpen, removeItem, updateQuantity, totalPrice, totalItems } = useCart();
+  const navigate = useNavigate();
+
+  const handleCheckout = () => {
+    setIsCartOpen(false);
+    navigate("/checkout");
+  };
 
   return (
     <AnimatePresence>
@@ -44,7 +51,9 @@ export default function CartDrawer() {
               ) : (
                 <div className="space-y-6">
                   <AnimatePresence>
-                    {items.map((item) => (
+                    {items.map((item) => {
+                      const variantLabel = item.product.useDesignSelection ? "Design" : "Color";
+                      return (
                       <motion.div
                         key={`${item.product.id}-${item.size}-${item.color}`}
                         layout
@@ -53,16 +62,16 @@ export default function CartDrawer() {
                         className="flex gap-4"
                       >
                         <img
-                          src={item.product.image}
+                          src={item.product.images?.[0] || ""}
                           alt={item.product.name}
                           className="w-20 h-20 object-cover bg-secondary"
                         />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{item.product.name}</p>
                           <p className="text-[11px] text-muted-foreground mt-1">
-                            Size: {item.size} · {item.color}
+                            Size: {item.size} Â· {variantLabel}: {item.color}
                           </p>
-                          <p className="text-sm font-semibold mt-1">GH₵{item.product.price}</p>
+                          <p className="text-sm font-semibold mt-1">GHC {item.product.price}</p>
                           <div className="flex items-center gap-3 mt-2">
                             <button
                               onClick={() => updateQuantity(item.product.id, item.size, item.color, item.quantity - 1)}
@@ -86,7 +95,8 @@ export default function CartDrawer() {
                           </div>
                         </div>
                       </motion.div>
-                    ))}
+                      );
+                    })}
                   </AnimatePresence>
                 </div>
               )}
@@ -96,9 +106,12 @@ export default function CartDrawer() {
               <div className="p-6 border-t border-border">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">Total</span>
-                  <span className="text-lg font-semibold tabular-nums">GH₵{totalPrice}</span>
+                  <span className="text-lg font-semibold tabular-nums">GHC {totalPrice}</span>
                 </div>
-                <button className="w-full h-12 bg-foreground text-primary-foreground text-sm uppercase tracking-[0.1em] font-medium transition-opacity hover:opacity-90">
+                <button
+                  onClick={handleCheckout}
+                  className="w-full h-12 bg-foreground text-primary-foreground text-sm uppercase tracking-[0.1em] font-medium transition-opacity hover:opacity-90"
+                >
                   Checkout
                 </button>
                 <p className="text-[11px] text-muted-foreground text-center mt-3">Free delivery in Accra</p>
@@ -110,3 +123,4 @@ export default function CartDrawer() {
     </AnimatePresence>
   );
 }
+
