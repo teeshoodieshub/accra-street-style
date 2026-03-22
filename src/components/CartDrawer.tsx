@@ -51,7 +51,9 @@ export default function CartDrawer() {
               ) : (
                 <div className="space-y-6">
                   <AnimatePresence>
-                    {items.map((item) => (
+                    {items.map((item) => {
+                      const variantLabel = item.product.useDesignSelection ? "Design" : "Color";
+                      return (
                       <motion.div
                         key={`${item.product.id}-${item.size}-${item.color}`}
                         layout
@@ -67,7 +69,7 @@ export default function CartDrawer() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{item.product.name}</p>
                           <p className="text-[11px] text-muted-foreground mt-1">
-                            Size: {item.size} Â· {item.color}
+                            Size: {item.size} Â· {variantLabel}: {item.color}
                           </p>
                           <p className="text-sm font-semibold mt-1">GHC {item.product.price}</p>
                           <div className="flex items-center gap-3 mt-2">
@@ -93,7 +95,8 @@ export default function CartDrawer() {
                           </div>
                         </div>
                       </motion.div>
-                    ))}
+                      );
+                    })}
                   </AnimatePresence>
                 </div>
               )}

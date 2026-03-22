@@ -5,11 +5,13 @@ export type Product = {
   category: string;
   featuredImage: string;
   images: string[];
+  useDesignSelection: boolean;
   colors: string[];
   sizes: string[];
   description: string;
   specs: string;
   isNew?: boolean;
+  isFeatured?: boolean;
 };
 
 // Products are now managed via Supabase database

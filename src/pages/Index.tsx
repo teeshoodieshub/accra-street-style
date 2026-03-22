@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Printer, Shirt, Palette, CheckCircle2, ShieldCheck, Truck, Sparkles, Star } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { useProducts } from "@/hooks/use-products";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
@@ -63,6 +63,55 @@ const heroContentPresets = [
   },
 ];
 
+const services = [
+  {
+    title: "Sale Of Plain Merchs",
+    description: "Premium blank tees, hoodies, and sleeveless cuts in clean, wearable colorways.",
+    icon: Shirt,
+  },
+  {
+    title: "Custom Print",
+    description: "Brand, event, and team printing with quality ink application and durable finish.",
+    icon: Printer,
+  },
+  {
+    title: "Design Support",
+    description: "Need help with placement, sizing, or mockups? We guide you before production.",
+    icon: Palette,
+  },
+];
+
+const howItWorks = [
+  { title: "Send Brief", detail: "Share your quantity, garment type, and artwork (or text idea)." },
+  { title: "Approve Mockup", detail: "We confirm layout, color, and placement before production starts." },
+  { title: "Production", detail: "Your order is printed and finished with quality checks." },
+  { title: "Delivery", detail: "Pickup or delivery with updates from confirmation to completion." },
+];
+
+const reasons = [
+  { title: "Heavyweight Quality", detail: "450-500 GSM options with reliable structure and fit.", icon: ShieldCheck },
+  { title: "Fast Turnaround", detail: "Clear timelines and consistent communication per order.", icon: Truck },
+  { title: "Culture-First Design", detail: "Street-led cuts and visuals built for local and global wear.", icon: Sparkles },
+];
+
+const testimonials = [
+  {
+    quote: "Our event merch sold out in two days. Print quality and fit were both on point.",
+    name: "Kofi A.",
+    role: "Community Organizer",
+  },
+  {
+    quote: "The hoodie blanks feel premium and the finishing is clean. Easy reorder process too.",
+    name: "Nana E.",
+    role: "Fashion Retailer",
+  },
+  {
+    quote: "From mockup to delivery, everything was smooth. Great support and solid final product.",
+    name: "Ama T.",
+    role: "Brand Manager",
+  },
+];
+
 export default function HomePage() {
   const { data: products = [] } = useProducts();
   const { data: dbCategories = [] } = useQuery({
@@ -75,7 +124,7 @@ export default function HomePage() {
     queryFn: listHeroImages,
     staleTime: 5 * 60 * 1000,
   });
-  const featured = products.slice(0, 4);
+  const featured = products.filter((product) => product.isFeatured).slice(0, 4);
   const heroSectionRef = useRef<HTMLElement | null>(null);
   const categoryScrollerRef = useRef<HTMLDivElement | null>(null);
   const [heroApi, setHeroApi] = useState<CarouselApi>();
@@ -189,7 +238,7 @@ export default function HomePage() {
                     <div className="grid md:grid-cols-12 gap-8 items-end">
                       <motion.div {...fadeInUp} className="md:col-span-7">
                         <p className="technical-label text-primary-foreground/80 mb-3 md:mb-4 text-[10px] sm:text-[11px]">{slide.label}</p>
-                        <h1 className="font-serif font-semibold leading-[0.95] tracking-wide text-[2.1rem] sm:text-[2.5rem] md:text-[clamp(2.7rem,6.5vw,5.6rem)]">
+                        <h1 className="font-serif font-semibold leading-[0.95] tracking-wide text-[2.1rem] sm:text-[2.5rem] md:text-[clamp(2.7rem,6.5vw,5.6rem)] text-gradient-animated text-glow-soft">
                           {slide.title}
                           <br />
                           <span className="italic">{slide.accent}</span>
@@ -206,7 +255,7 @@ export default function HomePage() {
                           </Link>
                           <Link
                             to="/about"
-                            className="hidden sm:inline-flex items-center gap-2 text-xs md:text-sm uppercase tracking-[0.15em] text-primary-foreground border-b border-primary-foreground/40 pb-1 hover:border-primary-foreground transition-colors"
+                            className="hidden sm:inline-flex items-center gap-2 text-xs md:text-sm uppercase tracking-[0.15em] text-primary-foreground border-b border-primary-foreground/40 pb-1 hover:border-primary-foreground transition-colors link-underline-fx"
                           >
                             Our Craft
                           </Link>
@@ -281,18 +330,19 @@ export default function HomePage() {
       </section>
 
       {/* Featured Products */}
+      {featured.length > 0 && (
       <section className="py-20 md:py-28">
         <div className="container">
           <motion.div {...fadeInUp} className="text-center mb-16">
             <p className="technical-label mb-3">Our Collection</p>
-            <h2 className="font-serif text-3xl md:text-4xl font-medium italic">Featured Pieces</h2>
+            <h2 className="font-serif text-3xl md:text-4xl font-medium italic text-lift-hover">Featured Pieces</h2>
           </motion.div>
           <motion.div
             variants={staggerContainer}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, amount: 0.12 }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12"
           >
             {featured.map((product) => (
               <motion.div key={product.id} variants={staggerItem}>
@@ -303,30 +353,157 @@ export default function HomePage() {
           <motion.div {...fadeInUp} className="text-center mt-16">
             <Link
               to="/shop"
-              className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.15em] text-accent border-b border-accent/40 pb-1 hover:border-accent transition-colors"
+              className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.15em] text-accent border-b border-accent/40 pb-1 hover:border-accent transition-colors link-underline-fx"
             >
               View All Pieces <ArrowRight className="w-4 h-4" />
             </Link>
           </motion.div>
         </div>
       </section>
+      )}
 
       {/* About strip */}
       <section className="py-20 md:py-28 bg-secondary">
         <div className="container max-w-3xl text-center">
           <motion.div {...fadeInUp}>
             <p className="technical-label mb-3">Our Story</p>
-            <h2 className="font-serif text-3xl md:text-4xl font-medium italic mb-6">Crafted in West Africa</h2>
+            <h2 className="font-serif text-3xl md:text-4xl font-medium italic mb-6 text-lift-hover">Crafted in West Africa</h2>
             <p className="text-muted-foreground leading-relaxed max-w-xl mx-auto">
               Every piece is designed in Accra, for the world. We source 450-500GSM heavyweight cotton because we believe streetwear should feel as good as it looks.
             </p>
             <Link
               to="/about"
-              className="mt-8 inline-flex items-center gap-2 text-sm uppercase tracking-[0.15em] text-accent border-b border-accent/40 pb-1 hover:border-accent transition-colors"
+              className="mt-8 inline-flex items-center gap-2 text-sm uppercase tracking-[0.15em] text-accent border-b border-accent/40 pb-1 hover:border-accent transition-colors link-underline-fx"
             >
               Learn More <ArrowRight className="w-4 h-4" />
             </Link>
           </motion.div>
+        </div>
+      </section>
+
+      {/* Services */}
+      <section className="py-20 md:py-28">
+        <div className="container">
+          <motion.div {...fadeInUp} className="text-center mb-14">
+            <p className="technical-label mb-3">Our Services</p>
+            <h2 className="font-serif text-3xl md:text-4xl font-medium italic text-lift-hover">Built For Brands And Everyday Wear</h2>
+          </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {services.map((service) => {
+              const Icon = service.icon;
+              return (
+                <motion.div key={service.title} {...fadeInUp} className="border border-border p-6 bg-background/60">
+                  <Icon className="w-5 h-5 text-accent mb-4" />
+                  <h3 className="font-serif text-2xl italic mb-3">{service.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{service.description}</p>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Custom Print */}
+      <section className="py-20 md:py-28 bg-secondary">
+        <div className="container max-w-5xl">
+          <div className="grid md:grid-cols-2 gap-10 items-center">
+            <motion.div {...fadeInUp}>
+              <p className="technical-label mb-3">Custom Print</p>
+              <h2 className="font-serif text-3xl md:text-4xl font-medium italic mb-5 text-lift-hover">Your Design, Our Production</h2>
+              <p className="text-muted-foreground leading-relaxed mb-6">
+                From one-off drops to bulk runs, we print on premium blanks with clear placement and long-lasting finish.
+              </p>
+              <Link
+                to="/custom-prints"
+                className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.15em] text-accent border-b border-accent/40 pb-1 hover:border-accent transition-colors link-underline-fx"
+              >
+                Start Custom Order <ArrowRight className="w-4 h-4" />
+              </Link>
+            </motion.div>
+            <motion.div {...fadeInUp} className="border border-border p-6 bg-background/70">
+              <ul className="space-y-4">
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="w-4 h-4 mt-1 text-accent" />
+                  <span className="text-sm text-muted-foreground">Single-color and multi-color print options.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="w-4 h-4 mt-1 text-accent" />
+                  <span className="text-sm text-muted-foreground">Front, back, and sleeve placement support.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="w-4 h-4 mt-1 text-accent" />
+                  <span className="text-sm text-muted-foreground">Quality checks on garments and print finish.</span>
+                </li>
+              </ul>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-20 md:py-28">
+        <div className="container">
+          <motion.div {...fadeInUp} className="text-center mb-14">
+            <p className="technical-label mb-3">How It Works</p>
+            <h2 className="font-serif text-3xl md:text-4xl font-medium italic text-lift-hover">Simple Process, Clear Delivery</h2>
+          </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {howItWorks.map((step, index) => (
+              <motion.div key={step.title} {...fadeInUp} className="border border-border p-5 bg-background/70">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-accent mb-3">Step {index + 1}</p>
+                <h3 className="font-medium mb-2">{step.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{step.detail}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose Us */}
+      <section className="py-20 md:py-28 bg-foreground text-primary-foreground">
+        <div className="container">
+          <motion.div {...fadeInUp} className="text-center mb-14">
+            <p className="technical-label text-primary-foreground/75 mb-3">Why Choose Us</p>
+            <h2 className="font-serif text-3xl md:text-4xl font-medium italic text-lift-hover">Made With Intent, Delivered With Care</h2>
+          </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {reasons.map((item) => {
+              const Icon = item.icon;
+              return (
+                <motion.div key={item.title} {...fadeInUp} className="border border-primary-foreground/20 p-6 bg-primary-foreground/5">
+                  <Icon className="w-5 h-5 text-accent mb-4" />
+                  <h3 className="font-medium mb-2">{item.title}</h3>
+                  <p className="text-sm text-primary-foreground/75 leading-relaxed">{item.detail}</p>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-20 md:py-28">
+        <div className="container">
+          <motion.div {...fadeInUp} className="text-center mb-14">
+            <p className="technical-label mb-3">Testimonials</p>
+            <h2 className="font-serif text-3xl md:text-4xl font-medium italic text-lift-hover">What Customers Say</h2>
+          </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {testimonials.map((item) => (
+              <motion.div key={item.name} {...fadeInUp} className="border border-border p-6 bg-background/70">
+                <div className="flex gap-1 text-accent mb-4">
+                  <Star className="w-4 h-4 fill-current" />
+                  <Star className="w-4 h-4 fill-current" />
+                  <Star className="w-4 h-4 fill-current" />
+                  <Star className="w-4 h-4 fill-current" />
+                  <Star className="w-4 h-4 fill-current" />
+                </div>
+                <p className="text-sm leading-relaxed mb-5">"{item.quote}"</p>
+                <p className="text-sm font-medium">{item.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">{item.role}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -336,7 +513,7 @@ export default function HomePage() {
           <div className="px-2 md:px-4">
             <motion.div {...fadeInUp} className="mb-4 md:mb-5 px-2 md:px-0">
               <p className="technical-label mb-2">Shop By Category</p>
-              <h2 className="font-serif text-2xl md:text-4xl font-medium italic">Find Your Fit</h2>
+              <h2 className="font-serif text-2xl md:text-4xl font-medium italic text-lift-hover">Find Your Fit</h2>
             </motion.div>
             <motion.div
               ref={categoryScrollerRef}
@@ -379,6 +556,33 @@ export default function HomePage() {
           </div>
         </section>
       )}
+
+      {/* CTA */}
+      <section className="py-20 md:py-24 bg-foreground text-primary-foreground">
+        <div className="container text-center max-w-3xl">
+          <motion.div {...fadeInUp}>
+            <p className="technical-label text-primary-foreground/75 mb-3">Ready To Start?</p>
+            <h2 className="font-serif text-3xl md:text-5xl font-medium italic mb-5 text-gradient-animated text-glow-soft">Launch Your Next Merch Drop With Us</h2>
+            <p className="text-primary-foreground/75 mb-8">
+              Shop ready-made pieces or place a custom print order for your team, brand, or event.
+            </p>
+            <div className="flex items-center justify-center gap-4 flex-wrap">
+              <Link
+                to="/shop"
+                className="inline-flex items-center gap-2 h-11 px-5 bg-accent text-accent-foreground text-xs uppercase tracking-[0.16em] font-medium hover:opacity-90 transition-opacity"
+              >
+                Shop Collection <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                to="/custom-prints"
+                className="inline-flex items-center gap-2 text-sm uppercase tracking-[0.15em] text-primary-foreground border-b border-primary-foreground/40 pb-1 hover:border-primary-foreground transition-colors link-underline-fx"
+              >
+                Start Custom Print
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
       {/* Newsletter */}
       <section className="py-20 md:py-28">

@@ -173,8 +173,8 @@ export default function ProductPage() {
   const { addItem } = useCart();
   const { data: products = [] } = useProducts();
   const product = products.find((p) => p.id === id);
-  const [selectedSize, setSelectedSize] = useState("");
-  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedVariants, setSelectedVariants] = useState<string[]>([]);
+  const [variantSizes, setVariantSizes] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
@@ -200,11 +200,46 @@ export default function ProductPage() {
   }
 
   const related = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 2);
+  const usesImageDesignSelection = product.useDesignSelection;
+  const currentImageVariant = usesImageDesignSelection
+    ? `Design ${activeImageIndex + 1}`
+    : product.colors[activeImageIndex];
+  const isCurrentImageVariantSelected = Boolean(
+    currentImageVariant && selectedVariants.includes(currentImageVariant)
+  );
+  const selectedCount = selectedVariants.length;
+  const readyCount = selectedVariants.filter((variant) => Boolean(variantSizes[variant])).length;
+
+  const toggleVariant = (variant: string, imageIdx?: number) => {
+    setSelectedVariants((prev) => {
+      if (prev.includes(variant)) {
+        setVariantSizes((sizes) => {
+          const next = { ...sizes };
+          delete next[variant];
+          return next;
+        });
+        return prev.filter((v) => v !== variant);
+      }
+
+      setVariantSizes((sizes) => ({
+        ...sizes,
+        [variant]: sizes[variant] || product.sizes[0] || "",
+      }));
+      return [...prev, variant];
+    });
+    if (typeof imageIdx === "number" && product.images[imageIdx]) {
+      setActiveImageIndex(imageIdx);
+    }
+  };
 
   const handleAddToCart = () => {
-    if (!selectedSize || !selectedColor) return;
-    for (let i = 0; i < quantity; i++) {
-      addItem(product, selectedSize, colorNames[selectedColor] || selectedColor);
+    if (selectedVariants.length === 0) return;
+    for (const variant of selectedVariants) {
+      const selectedSize = variantSizes[variant];
+      if (!selectedSize) continue;
+      for (let i = 0; i < quantity; i++) {
+        addItem(product, selectedSize, variant);
+      }
     }
   };
 
@@ -221,38 +256,41 @@ export default function ProductPage() {
           <div className="lg:col-span-7 flex flex-col-reverse lg:flex-row gap-4">
             {/* Thumbnails */}
             {product.images && product.images.length > 1 && (
-              <div className="flex lg:flex-col gap-3 lg:w-20 overflow-x-auto lg:overflow-y-auto no-scrollbar scroll-smooth py-1">
+              <div className="grid grid-flow-col auto-cols-max grid-rows-7 gap-3 overflow-x-auto overflow-y-hidden no-scrollbar scroll-smooth py-1 lg:max-w-[180px]">
                 {product.images.map((img, idx) => {
-                  const linkedColor = product.colors[idx];
-                  const isColorSelected = linkedColor && selectedColor === linkedColor;
+                  const linkedVariant = usesImageDesignSelection ? `Design ${idx + 1}` : product.colors[idx];
+                  const isVariantSelected = Boolean(linkedVariant && selectedVariants.includes(linkedVariant));
                   const isActive = activeImageIndex === idx;
                   return (
                     <button
                       key={idx}
                       onClick={() => {
+                        if (linkedVariant) {
+                          toggleVariant(linkedVariant, idx);
+                          return;
+                        }
                         setActiveImageIndex(idx);
-                        if (linkedColor) setSelectedColor(linkedColor);
                       }}
-                      title={linkedColor ? (colorNames[linkedColor] || linkedColor) : `View ${idx + 1}`}
-                      className={`relative flex-shrink-0 w-16 h-20 lg:w-full lg:h-24 bg-secondary overflow-hidden transition-all duration-300 rounded-sm ${
+                      title={linkedVariant || `View ${idx + 1}`}
+                      className={`relative flex-shrink-0 w-16 h-20 bg-secondary overflow-hidden transition-all duration-300 rounded-sm ${
                         isActive
                           ? "ring-2 ring-foreground opacity-100 scale-105"
                           : "opacity-50 hover:opacity-90"
                       }`}
                     >
-                      <img src={img} alt={`${product.name} â€” ${colorNames[linkedColor] || `view ${idx + 1}`}`} className="w-full h-full object-cover" />
+                      <img src={img} alt={`${product.name} â€” ${linkedVariant || `view ${idx + 1}`}`} className="w-full h-full object-cover" />
 
                       {/* Color dot indicator - now more integrated into the corner */}
-                      {linkedColor && (
+                      {!usesImageDesignSelection && linkedVariant && (
                         <div
                           className={`absolute bottom-1.5 right-1.5 w-2.5 h-2.5 rounded-full border border-white/50 shadow-sm transition-transform duration-300 ${isActive ? "scale-110" : "scale-100"}`}
-                          style={{ backgroundColor: linkedColor }}
+                          style={{ backgroundColor: linkedVariant }}
                         />
                       )}
 
                       {/* Selected-color checkmark (Tick) - positioned in the top-right */}
                       <AnimatePresence>
-                        {isColorSelected && (
+                        {isVariantSelected && (
                           <motion.div
                             initial={{ scale: 0, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -267,7 +305,7 @@ export default function ProductPage() {
                       </AnimatePresence>
 
                       {/* Active hint (not necessarily selected color yet) */}
-                      {!isColorSelected && isActive && (
+                      {!isVariantSelected && isActive && (
                         <div className="absolute top-2 right-2 z-10">
                           <div className="bg-black/20 backdrop-blur-sm text-white/70 rounded-full p-1 border border-white/20">
                             <Check className="w-3.5 h-3.5 opacity-50" />
@@ -283,7 +321,7 @@ export default function ProductPage() {
             
             {/* Main Image */}
             <div
-              className="flex-1 relative group bg-secondary overflow-hidden aspect-[4/5] cursor-zoom-in"
+              className="flex-1 relative group bg-secondary overflow-hidden h-[420px] md:h-[560px] lg:h-[680px] cursor-zoom-in"
               onClick={() => setIsZoomed(true)}
             >
               <motion.div
@@ -306,11 +344,11 @@ export default function ProductPage() {
               </div>
 
               {/* Zoom hint overlay */}
-              {/* Selected Color Tick Overlay on Main Image */}
+              {/* Selected variant overlay on main image */}
               <AnimatePresence>
-                {selectedColor && (
-                  <motion.div 
-                    key={`main-tick-${selectedColor}`}
+                {isCurrentImageVariantSelected && (
+                  <motion.div
+                    key={`main-tick-${currentImageVariant}`}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className="absolute top-6 right-6 z-10 flex flex-col items-center gap-2"
@@ -348,40 +386,62 @@ export default function ProductPage() {
               {product.description}
             </p>
 
-            {/* Color selector */}
+            {/* Variant selector (Design or Color) */}
             <div className="space-y-4 pt-4">
               <div className="flex justify-between items-end">
-                <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">Color</p>
-                <p className="text-[11px] font-medium italic">{colorNames[selectedColor] || (selectedColor.startsWith('#') ? selectedColor : selectedColor) || "Select a color"}</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">
+                  {usesImageDesignSelection ? "Design" : "Color"}
+                </p>
+                <p className="text-[11px] font-medium italic">
+                  {usesImageDesignSelection
+                    ? selectedVariants.length > 0 ? `${selectedVariants.length} selected` : "Select design(s)"
+                    : selectedVariants.length > 0
+                      ? `${selectedVariants.length} selected`
+                      : "Select color(s)"}
+                </p>
               </div>
-              <div className="flex gap-3">
-                {product.colors.map((color, colorIdx) => (
-                  <button
-                    key={color}
-                    onClick={() => {
-                      setSelectedColor(color);
-                      // Auto-navigate to the matching image if it exists
-                      if (product.images[colorIdx]) setActiveImageIndex(colorIdx);
-                    }}
-                    className={`group relative w-10 h-10 rounded-full transition-all duration-300 ${
-                      selectedColor === color 
-                        ? "ring-2 ring-foreground ring-offset-4 ring-offset-background scale-110" 
-                        : "hover:scale-110"
-                    }`}
-                    style={{ backgroundColor: color, border: "1px solid rgba(0,0,0,0.1)" }}
-                    aria-label={colorNames[color] || color}
-                  >
-                    {selectedColor === color && (
-                      <motion.div 
-                        layoutId="colorCheck"
-                        className="absolute inset-0 flex items-center justify-center"
-                      >
-                        <Check className={`w-4 h-4 ${color === "#fff" || color === "#F5F5DC" ? "text-black" : "text-white"}`} />
-                      </motion.div>
-                    )}
-                  </button>
-                ))}
-              </div>
+              {usesImageDesignSelection ? (
+                <div className="flex flex-wrap gap-2">
+                  {product.images.map((_, designIdx) => {
+                    const design = `Design ${designIdx + 1}`;
+                    return (
+                    <button
+                      key={design}
+                      onClick={() => toggleVariant(design, designIdx)}
+                      className={`h-10 px-4 border text-[10px] uppercase tracking-wider transition-colors ${
+                        selectedVariants.includes(design)
+                          ? "bg-foreground text-background border-foreground"
+                          : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {design}
+                    </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex gap-3">
+                  {product.colors.map((color, colorIdx) => (
+                    <button
+                      key={color}
+                      onClick={() => toggleVariant(color, colorIdx)}
+                      className={`group relative w-10 h-10 rounded-full transition-all duration-300 ${
+                        selectedVariants.includes(color)
+                          ? "ring-2 ring-foreground ring-offset-4 ring-offset-background scale-110"
+                          : "hover:scale-110"
+                      }`}
+                      style={{ backgroundColor: color, border: "1px solid rgba(0,0,0,0.1)" }}
+                      aria-label={colorNames[color] || color}
+                    >
+                      {selectedVariants.includes(color) && (
+                        <motion.div className="absolute inset-0 flex items-center justify-center">
+                          <Check className={`w-4 h-4 ${color === "#fff" || color === "#F5F5DC" ? "text-black" : "text-white"}`} />
+                        </motion.div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Size selector */}
@@ -390,21 +450,36 @@ export default function ProductPage() {
                 <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">Size</p>
                 <button className="text-[10px] uppercase tracking-wider font-bold underline underline-offset-4 hover:text-muted-foreground transition-colors">Size Guide</button>
               </div>
-              <div className="grid grid-cols-4 gap-2">
-                {product.sizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`h-12 text-[11px] uppercase font-bold tracking-widest transition-all duration-300 border rounded-sm ${
-                      selectedSize === size
-                        ? "bg-foreground text-primary-foreground border-foreground shadow-lg"
-                        : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
+              {selectedVariants.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Select at least one {usesImageDesignSelection ? "design" : "color"} first.</p>
+              ) : (
+                <div className="space-y-3">
+                  {selectedVariants.map((variant) => (
+                    <div key={variant} className="border border-border p-3 space-y-2">
+                      <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
+                        {usesImageDesignSelection ? variant : `${colorNames[variant] || variant}`}
+                      </p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {product.sizes.map((size) => (
+                          <button
+                            key={`${variant}-${size}`}
+                            onClick={() =>
+                              setVariantSizes((prev) => ({ ...prev, [variant]: size }))
+                            }
+                            className={`h-10 text-[11px] uppercase font-bold tracking-widest transition-all duration-300 border rounded-sm ${
+                              variantSizes[variant] === size
+                                ? "bg-foreground text-primary-foreground border-foreground shadow-lg"
+                                : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Quantity & Add to cart */}
@@ -426,10 +501,14 @@ export default function ProductPage() {
               </div>
               <button
                 onClick={handleAddToCart}
-                disabled={!selectedSize || !selectedColor}
+                disabled={selectedCount === 0 || readyCount !== selectedCount}
                 className="flex-1 h-14 bg-foreground text-primary-foreground text-[11px] uppercase tracking-[0.2em] font-bold transition-all hover:bg-foreground/90 disabled:opacity-40 disabled:cursor-not-allowed group relative overflow-hidden flex items-center justify-center gap-2 rounded-sm"
               >
-                {!selectedSize || !selectedColor ? "Select size & color" : (
+                {selectedCount === 0
+                  ? `Select ${usesImageDesignSelection ? "design(s)" : "color(s)"}`
+                  : readyCount !== selectedCount
+                  ? `Assign size (${readyCount}/${selectedCount})`
+                  : (
                   <>
                     Add to Bag
                     <motion.span 
@@ -437,7 +516,7 @@ export default function ProductPage() {
                       animate={{ x: 0, opacity: 1 }}
                       className="inline-block"
                     >
-                      - GHC {(product.price * quantity).toLocaleString()}
+                      ({selectedCount} selected) - GHC {(product.price * quantity * readyCount).toLocaleString()}
                     </motion.span>
                   </>
                 )}
@@ -486,7 +565,7 @@ export default function ProductPage() {
               <p className="technical-label mb-2">You may also like</p>
               <h2 className="font-serif text-2xl font-medium italic">Related Pieces</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
               {related.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}

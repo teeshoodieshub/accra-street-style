@@ -14,11 +14,14 @@ create table if not exists public.products (
   category text not null,
   featured_image_url text,
   image_urls text[] not null default '{}', -- Updated to array
+  design_options text[] not null default '{}',
+  use_design_selection boolean not null default false,
   colors text[] not null default '{}',
   sizes text[] not null default '{}',
   description text not null,
   specs text not null,
   is_new boolean default false,
+  is_featured boolean not null default false,
   created_at timestamptz not null default now()
 );
 

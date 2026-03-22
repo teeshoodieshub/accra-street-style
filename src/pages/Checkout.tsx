@@ -330,7 +330,7 @@ export default function Checkout() {
                     <p className="text-sm font-semibold">GHC {(item.product.price * item.quantity).toFixed(2)}</p>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {item.size} / {item.color}
+                    {item.size} / {item.product.useDesignSelection ? `Design: ${item.color}` : `Color: ${item.color}`}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Qty: {item.quantity}

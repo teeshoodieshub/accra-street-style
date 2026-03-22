@@ -8,11 +8,13 @@ type DbProduct = {
   category: string;
   featured_image_url: string | null;
   image_urls: string[];
+  use_design_selection: boolean | null;
   colors: string[];
   sizes: string[];
   description: string;
   specs: string;
   is_new: boolean | null;
+  is_featured: boolean | null;
 };
 
 export type DbCategory = {
@@ -20,6 +22,7 @@ export type DbCategory = {
   name: string;
   description: string | null;
   image_url?: string | null;
+  sort_order?: number;
   created_at: string;
 };
 
@@ -83,11 +86,13 @@ const mapDbProduct = (row: DbProduct): Product => ({
   category: row.category,
   featuredImage: row.featured_image_url || row.image_urls?.[0] || "",
   images: row.image_urls || [],
+  useDesignSelection: row.use_design_selection ?? false,
   colors: row.colors,
   sizes: row.sizes,
   description: row.description,
   specs: row.specs,
   isNew: row.is_new ?? false,
+  isFeatured: row.is_featured ?? false,
 });
 
 const mapProductToDb = (product: Product): DbProduct => ({
@@ -97,11 +102,13 @@ const mapProductToDb = (product: Product): DbProduct => ({
   category: product.category,
   featured_image_url: product.featuredImage || product.images?.[0] || null,
   image_urls: product.images,
+  use_design_selection: product.useDesignSelection,
   colors: product.colors,
   sizes: product.sizes,
   description: product.description,
   specs: product.specs,
   is_new: product.isNew ?? false,
+  is_featured: product.isFeatured ?? false,
 });
 
 export async function fetchProducts(): Promise<Product[]> {
@@ -145,29 +152,95 @@ export async function deleteProduct(productId: string): Promise<void> {
 }
 
 export async function listCategories(): Promise<DbCategory[]> {
-  const { data, error } = await supabase
+  const orderedQuery = await supabase
+    .from("categories")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
+
+  if (!orderedQuery.error && orderedQuery.data) {
+    return (orderedQuery.data as DbCategory[]).map((item, index) => ({
+      ...item,
+      sort_order: item.sort_order ?? index,
+    }));
+  }
+
+  // Backward compatibility for databases where sort_order is not yet present.
+  const fallbackQuery = await supabase
     .from("categories")
     .select("*")
     .order("name", { ascending: true });
-  if (error || !data) return [];
-  return data as DbCategory[];
+
+  if (fallbackQuery.error || !fallbackQuery.data) return [];
+  return (fallbackQuery.data as DbCategory[]).map((item, index) => ({
+    ...item,
+    sort_order: index,
+  }));
 }
 
-export async function createCategory(category: { id: string; name: string; description?: string; image_url?: string }): Promise<void> {
-  const { error } = await supabase.from("categories").insert(category);
-  if (error) throw error;
+export async function createCategory(category: { id: string; name: string; description?: string; image_url?: string; sort_order?: number }): Promise<void> {
+  const { sort_order, ...basePayload } = category;
+  const payload = typeof sort_order === "number" ? category : basePayload;
+
+  const firstAttempt = await supabase.from("categories").insert(payload);
+  if (!firstAttempt.error) return;
+
+  // If sort_order column is missing, retry without it.
+  if (typeof sort_order === "number") {
+    const retry = await supabase.from("categories").insert(basePayload);
+    if (!retry.error) return;
+    throw retry.error;
+  }
+
+  throw firstAttempt.error;
 }
 
-export async function updateCategory(category: { id: string; name: string; description?: string; image_url?: string }): Promise<void> {
-  const { error } = await supabase
+export async function updateCategory(category: { id: string; name: string; description?: string; image_url?: string; sort_order?: number }): Promise<void> {
+  const payload = {
+    name: category.name,
+    description: category.description,
+    image_url: category.image_url ?? null,
+    ...(typeof category.sort_order === "number" ? { sort_order: category.sort_order } : {}),
+  };
+
+  const firstAttempt = await supabase
     .from("categories")
-    .update({ name: category.name, description: category.description, image_url: category.image_url ?? null })
+    .update(payload)
     .eq("id", category.id);
-  if (error) throw error;
+  if (!firstAttempt.error) return;
+
+  // If sort_order column is missing, retry without it.
+  if (typeof category.sort_order === "number") {
+    const retry = await supabase
+      .from("categories")
+      .update({
+        name: category.name,
+        description: category.description,
+        image_url: category.image_url ?? null,
+      })
+      .eq("id", category.id);
+    if (!retry.error) return;
+    throw retry.error;
+  }
+
+  throw firstAttempt.error;
 }
 
 export async function deleteCategory(id: string): Promise<void> {
   const { error } = await supabase.from("categories").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function updateCategoryOrder(id: string, sortOrder: number): Promise<void> {
+  const { error } = await supabase
+    .from("categories")
+    .update({ sort_order: sortOrder })
+    .eq("id", id);
+
+  // If sort_order column does not exist yet, skip hard failure so categories remain usable.
+  if (error && typeof error.message === "string" && error.message.toLowerCase().includes("sort_order")) {
+    return;
+  }
   if (error) throw error;
 }
 

@@ -12,11 +12,13 @@ const emptyForm: Product = {
   category: "",
   featuredImage: "",
   images: [],
+  useDesignSelection: false,
   colors: [],
   sizes: [],
   description: "",
   specs: "",
   isNew: false,
+  isFeatured: false,
 };
 
 const AVAILABLE_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "3XL"];
@@ -363,6 +365,14 @@ export default function AdminProducts() {
               </label>
             </div>
           </div>
+          <label className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={form.useDesignSelection}
+              onChange={(e) => handleChange("useDesignSelection", e.target.checked)}
+            />
+            Select design from product images
+          </label>
           <div className="space-y-4">
             <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Colors</span>
             <div className="flex flex-wrap gap-2">
@@ -574,6 +584,14 @@ export default function AdminProducts() {
             />
             New arrival
           </label>
+          <label className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={form.isFeatured ?? false}
+              onChange={(e) => handleChange("isFeatured", e.target.checked)}
+            />
+            Featured on homepage
+          </label>
           <div className="flex items-center gap-3 pt-2">
             <button
               type="submit"
@@ -611,6 +629,9 @@ export default function AdminProducts() {
                 <p className="text-sm font-medium truncate">{product.name}</p>
                 <p className="text-xs text-muted-foreground mt-1">{product.id}</p>
                 <p className="text-xs text-muted-foreground mt-1">GHâ‚µ{product.price}</p>
+                {product.isFeatured && (
+                  <p className="text-[10px] uppercase tracking-[0.15em] text-accent mt-1">Featured</p>
+                )}
               </div>
               <div className="flex items-center gap-2 text-xs uppercase tracking-[0.15em]">
                 <button

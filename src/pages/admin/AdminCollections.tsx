@@ -4,6 +4,7 @@ import {
   listCategories,
   createCategory,
   updateCategory,
+  updateCategoryOrder,
   deleteCategory,
   listHeroImages,
   createHeroImage,
@@ -15,7 +16,7 @@ import {
 } from "@/lib/supabaseApi";
 import { defaultHeroImageUrls } from "@/lib/heroDefaults";
 import { toast } from "sonner";
-import { Loader2, Plus, Pencil, Trash2, X, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, X, Check, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
 
 type CategoryForm = {
   id: string;
@@ -106,7 +107,10 @@ export default function AdminCollections() {
     if (editingId) {
       updateMutation.mutate(form);
     } else {
-      createMutation.mutate(form);
+      const nextSortOrder = collections.length > 0
+        ? Math.max(...collections.map((item) => item.sort_order ?? 0)) + 1
+        : 0;
+      createMutation.mutate({ ...form, sort_order: nextSortOrder });
     }
   };
 
@@ -171,6 +175,26 @@ export default function AdminCollections() {
       queryClient.invalidateQueries({ queryKey: ["hero-images"] });
     } catch (error: any) {
       toast.error(`Failed to re-order header images: ${error.message}`);
+    }
+  };
+
+  const moveCategory = async (category: DbCategory, direction: "up" | "down") => {
+    const currentIndex = collections.findIndex((item) => item.id === category.id);
+    if (currentIndex === -1) return;
+
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= collections.length) return;
+
+    const reordered = [...collections];
+    const [moved] = reordered.splice(currentIndex, 1);
+    reordered.splice(targetIndex, 0, moved);
+
+    try {
+      await Promise.all(reordered.map((item, index) => updateCategoryOrder(item.id, index)));
+      queryClient.invalidateQueries({ queryKey: ["admin-collections"] });
+      toast.success("Collection order updated");
+    } catch (error: any) {
+      toast.error(`Failed to re-order collections: ${error.message}`);
     }
   };
 
@@ -436,6 +460,22 @@ export default function AdminCollections() {
                   {category.id}
                 </span>
                 <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => moveCategory(category, "up")}
+                    disabled={collections[0]?.id === category.id}
+                    className="p-1.5 hover:bg-secondary rounded-sm transition-colors text-muted-foreground hover:text-foreground disabled:opacity-40"
+                    title="Move up"
+                  >
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => moveCategory(category, "down")}
+                    disabled={collections[collections.length - 1]?.id === category.id}
+                    className="p-1.5 hover:bg-secondary rounded-sm transition-colors text-muted-foreground hover:text-foreground disabled:opacity-40"
+                    title="Move down"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
                   <button
                     onClick={() => handleEdit(category)}
                     className="p-1.5 hover:bg-secondary rounded-sm transition-colors text-muted-foreground hover:text-foreground"
