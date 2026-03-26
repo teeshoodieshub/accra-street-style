@@ -1,5 +1,11 @@
 import { supabase } from "@/lib/supabase";
+import {
+  getDcmPaymentOutcome,
+  type DcmPaymentResult,
+} from "@/lib/dcmPayment";
 import type { Product } from "@/data/products";
+
+export { getDcmPaymentOutcome } from "@/lib/dcmPayment";
 
 type DbProduct = {
   id: string;
@@ -64,20 +70,12 @@ export type DbOrder = {
   order_items: DbOrderItem[];
 };
 
-export type DcmPaymentResult = {
-  success?: boolean;
-  status?: string;
-  message?: string;
-  error?: string;
-  responseCode?: string | number;
-  paymentId?: string | number;
-  nameEnquiryTransactionID?: string;
-  collectionTransactionID?: string;
-  data?: {
-    nameEnquiry?: unknown;
-    collection?: unknown;
-  };
+export type OrderPaymentSnapshot = {
+  payment_reference: string | null;
+  payment_status: string | null;
 };
+
+export type { DcmPaymentResult } from "@/lib/dcmPayment";
 
 export type DbCart = {
   id: string;
@@ -91,6 +89,43 @@ export type DbCart = {
     product: Pick<DbProduct, "id" | "name" | "image_urls">;
   }>;
 };
+
+type SupabaseFunctionInvokeError = Error & {
+  context?: Response;
+};
+
+type DcmFunctionErrorBody = DcmPaymentResult & {
+  details?: string;
+};
+
+async function extractDcmPaymentErrorResponse(error: SupabaseFunctionInvokeError) {
+  let message = error.message || "Payment request failed";
+  let paymentResult: DcmPaymentResult | null = null;
+  const response = error.context;
+
+  if (!response) {
+    return { message, paymentResult };
+  }
+
+  try {
+    const body = (await response.clone().json()) as DcmFunctionErrorBody;
+    paymentResult = body && typeof body === "object" ? body : null;
+    message = body?.message || body?.error || body?.details || message;
+    return { message, paymentResult };
+  } catch {
+    try {
+      const text = await response.clone().text();
+      if (text) {
+        message = text;
+        paymentResult = { message: text };
+      }
+    } catch {
+      // keep fallback message
+    }
+  }
+
+  return { message, paymentResult };
+}
 
 const CART_ID_KEY = "tees_cart_id";
 const UUID_PATTERN =
@@ -415,63 +450,21 @@ export async function initiateDcmPayment(
       amount,
       network,
       orderId,
-      narration: narration || `Order #${orderId}`
+      narration: narration || `Order ${orderId.slice(0, 8).toUpperCase()}`,
     }
   });
 
   if (error) {
-    let message = error.message || "Payment request failed";
-    const response = (error as any).context as Response | undefined;
-    if (response) {
-      try {
-        const body = await response.clone().json();
-        message =
-          body?.message ||
-          body?.error ||
-          body?.details ||
-          message;
-      } catch {
-        try {
-          const text = await response.clone().text();
-          if (text) message = text;
-        } catch {
-          // keep fallback message
-        }
-      }
+    const invokeError = error as SupabaseFunctionInvokeError;
+    const { message, paymentResult } = await extractDcmPaymentErrorResponse(invokeError);
+
+    if (paymentResult && getDcmPaymentOutcome(paymentResult).accepted) {
+      return paymentResult;
     }
+
     throw new Error(message);
   }
   return data as DcmPaymentResult;
-}
-
-export function getDcmPaymentOutcome(paymentResult: DcmPaymentResult) {
-  const responseCode = String(paymentResult?.responseCode ?? "");
-  const rawStatus = String(paymentResult?.status ?? "").toLowerCase();
-  const hasTransactionReference = Boolean(
-    paymentResult?.collectionTransactionID ||
-      paymentResult?.nameEnquiryTransactionID ||
-      paymentResult?.paymentId
-  );
-
-  const accepted =
-    paymentResult?.success === true ||
-    responseCode === "000" ||
-    rawStatus === "success" ||
-    rawStatus === "approved" ||
-    rawStatus === "completed" ||
-    rawStatus === "pending" ||
-    rawStatus === "processing" ||
-    rawStatus === "initiated" ||
-    hasTransactionReference;
-
-  return {
-    accepted,
-    status: accepted ? "initiated" : rawStatus || "failed",
-    reference:
-      paymentResult?.collectionTransactionID ||
-      paymentResult?.nameEnquiryTransactionID ||
-      String(paymentResult?.paymentId ?? ""),
-  };
 }
 
 export async function updateOrderPaymentState(
@@ -492,6 +485,22 @@ export async function updateOrderPaymentState(
   if (error) {
     throw error;
   }
+}
+
+export async function getOrderPaymentSnapshot(
+  orderId: string
+): Promise<OrderPaymentSnapshot | null> {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("payment_status,payment_reference")
+    .eq("id", orderId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as OrderPaymentSnapshot | null;
 }
 
 export async function listOrders(): Promise<DbOrder[]> {

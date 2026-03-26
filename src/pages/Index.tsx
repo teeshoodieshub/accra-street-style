@@ -149,6 +149,7 @@ export default function HomePage() {
       image: category.image_url || categoryProduct?.images?.[0] || defaultHeroImageUrls[index % defaultHeroImageUrls.length],
     };
   });
+  const loopingCategoryPanels = categoryPanels.length > 1 ? [...categoryPanels, ...categoryPanels] : categoryPanels;
 
   useEffect(() => {
     if (!heroApi) {
@@ -175,14 +176,30 @@ export default function HomePage() {
       return;
     }
 
-    const interval = window.setInterval(() => {
-      const next = scroller.scrollLeft + 320;
-      const max = scroller.scrollWidth - scroller.clientWidth;
-      const target = next >= max - 2 ? 0 : next;
-      scroller.scrollTo({ left: target, behavior: "smooth" });
-    }, 3500);
+    let frameId = 0;
+    let lastTimestamp = 0;
 
-    return () => window.clearInterval(interval);
+    const tick = (timestamp: number) => {
+      if (!lastTimestamp) {
+        lastTimestamp = timestamp;
+      }
+
+      const elapsed = timestamp - lastTimestamp;
+      lastTimestamp = timestamp;
+      const singleLoopWidth = scroller.scrollWidth / 2;
+
+      scroller.scrollLeft += (elapsed * 48) / 1000;
+
+      if (scroller.scrollLeft >= singleLoopWidth) {
+        scroller.scrollLeft -= singleLoopWidth;
+      }
+
+      frameId = window.requestAnimationFrame(tick);
+    };
+
+    frameId = window.requestAnimationFrame(tick);
+
+    return () => window.cancelAnimationFrame(frameId);
   }, [categoryPanels.length, isCategoryScrollerPaused]);
 
   useEffect(() => {
@@ -521,37 +538,43 @@ export default function HomePage() {
               initial="hidden"
               whileInView="show"
               viewport={{ once: true, amount: 0.15 }}
-              className="flex gap-2 md:gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory"
+              className="flex gap-2 md:gap-3 overflow-x-auto no-scrollbar"
               onMouseEnter={() => setIsCategoryScrollerPaused(true)}
               onMouseLeave={() => setIsCategoryScrollerPaused(false)}
               onTouchStart={() => setIsCategoryScrollerPaused(true)}
               onTouchEnd={() => setIsCategoryScrollerPaused(false)}
+              onFocusCapture={() => setIsCategoryScrollerPaused(true)}
+              onBlurCapture={() => setIsCategoryScrollerPaused(false)}
             >
-              {categoryPanels.map((panel, index) => (
-                <motion.div
-                  key={panel.id}
-                  variants={staggerItem}
-                  className={`shrink-0 ${index < 2 ? "basis-[82vw] md:basis-[42vw]" : "basis-[58vw] md:basis-[26vw]"}`}
-                >
-                  <Link
-                    to={`/shop?category=${encodeURIComponent(panel.id)}`}
-                    className="relative overflow-hidden snap-start group block w-full h-full"
+              {loopingCategoryPanels.map((panel, index) => {
+                const sourceIndex = index % categoryPanels.length;
+
+                return (
+                  <motion.div
+                    key={`${panel.id}-${index}`}
+                    variants={staggerItem}
+                    className={`shrink-0 ${sourceIndex < 2 ? "basis-[82vw] md:basis-[42vw]" : "basis-[58vw] md:basis-[26vw]"}`}
                   >
-                    <div className="relative h-[58vh] min-h-[380px] md:h-[68vh]">
-                      <img src={panel.image} alt={panel.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 via-foreground/10 to-transparent" />
-                      <div className="absolute inset-x-0 bottom-0 p-4 md:p-6 flex items-center justify-between">
-                        <h3 className="text-primary-foreground text-lg md:text-3xl font-medium uppercase tracking-tight">
-                          {panel.name}
-                        </h3>
-                        <span className="text-primary-foreground text-xs md:text-sm uppercase tracking-[0.14em] border-b border-primary-foreground/60 pb-1">
-                          Shop Now
-                        </span>
+                    <Link
+                      to={`/shop?category=${encodeURIComponent(panel.id)}`}
+                      className="relative overflow-hidden group block w-full h-full"
+                    >
+                      <div className="relative h-[58vh] min-h-[380px] md:h-[68vh]">
+                        <img src={panel.image} alt={panel.name} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 via-foreground/10 to-transparent" />
+                        <div className="absolute inset-x-0 bottom-0 p-4 md:p-6 flex items-center justify-between">
+                          <h3 className="text-primary-foreground text-lg md:text-3xl font-medium uppercase tracking-tight">
+                            {panel.name}
+                          </h3>
+                          <span className="text-primary-foreground text-xs md:text-sm uppercase tracking-[0.14em] border-b border-primary-foreground/60 pb-1">
+                            Shop Now
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
+                    </Link>
+                  </motion.div>
+                );
+              })}
             </motion.div>
           </div>
         </section>

@@ -12,6 +12,11 @@ const NETWORK_NAMES: Record<string, string> = {
   telecel: "Telecel",
 };
 
+function formatOrderNarration(orderId: string | undefined) {
+  const shortOrderId = String(orderId ?? "").trim().slice(0, 8).toUpperCase();
+  return shortOrderId ? `Order ${shortOrderId}` : "Order payment";
+}
+
 Deno.serve(async (req: Request) => {
   // Handle CORS
   if (req.method === "OPTIONS") {
@@ -39,7 +44,7 @@ Deno.serve(async (req: Request) => {
     const payload = {
       accountNumber,
       amount: amount.toString(),
-      narration: narration || `Order #${orderId}`,
+      narration: narration || formatOrderNarration(orderId),
       network: mappedNetwork,
       partnerCode: DCM_PARTNER_CODE,
     };
@@ -68,9 +73,10 @@ Deno.serve(async (req: Request) => {
       status: response.status,
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in pay-dcm function:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const message = error instanceof Error ? error.message : "Unknown payment error";
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
