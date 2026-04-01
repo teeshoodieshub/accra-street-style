@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import SEOHead from "@/components/SEOHead";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 12 },
@@ -10,6 +11,11 @@ const fadeInUp = {
 export default function SizeGuidePage() {
   return (
     <main className="pt-28 pb-16">
+      <SEOHead
+        title="Size Guide"
+        description="Find your perfect fit with the Tees & Hoodies Hub size guide. Oversized streetwear sizing, measurement tips, and fit recommendations for all our tees and hoodies."
+        canonical="/size-guide"
+      />
       <div className="container max-w-3xl">
         <motion.div {...fadeInUp} className="text-center">
           <p className="technical-label mb-3">Support</p>

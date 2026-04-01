@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import SEOHead from "@/components/SEOHead";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 12 },
@@ -10,6 +11,11 @@ const fadeInUp = {
 export default function TermsPage() {
   return (
     <main className="pt-28 pb-16">
+      <SEOHead
+        title="Terms of Service"
+        description="Review the terms of service for Tees & Hoodies Hub. Understand our policies on orders, payments, intellectual property, and liability."
+        canonical="/terms"
+      />
       <div className="container max-w-3xl">
         <motion.div {...fadeInUp} className="text-center">
           <p className="technical-label mb-3">Legal</p>

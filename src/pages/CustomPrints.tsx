@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import SEOHead from "@/components/SEOHead";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 12 },
@@ -219,6 +220,11 @@ export default function CustomPrints() {
 
   return (
     <main className="pt-28 pb-16">
+      <SEOHead
+        title="Custom Printing Service"
+        description="Order custom printed tees, hoodies, and apparel from Tees & Hoodies Hub. Upload your design, choose placement, and get premium prints for your brand, event, or team. Minimum 10 pieces, 5-7 business day turnaround."
+        canonical="/custom-prints"
+      />
       <div className="container max-w-3xl">
         {/* Header */}
         <motion.div {...fadeInUp} className="text-center">

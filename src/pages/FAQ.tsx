@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import SEOHead from "@/components/SEOHead";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 12 },
@@ -38,6 +39,20 @@ const faqs = [
 export default function FAQPage() {
   return (
     <main className="pt-28 pb-16">
+      <SEOHead
+        title="FAQ"
+        description="Frequently asked questions about Tees & Hoodies Hub. Learn about order tracking, exchanges, sizing, care instructions, and more."
+        canonical="/faq"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": faqs.map((faq) => ({
+            "@type": "Question",
+            "name": faq.question,
+            "acceptedAnswer": { "@type": "Answer", "text": faq.answer }
+          }))
+        }}
+      />
       <div className="container max-w-3xl">
         <motion.div {...fadeInUp} className="text-center">
           <p className="technical-label mb-3">Support</p>

@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import SEOHead from "@/components/SEOHead";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 12 },
@@ -10,6 +11,11 @@ const fadeInUp = {
 export default function PrivacyPage() {
   return (
     <main className="pt-28 pb-16">
+      <SEOHead
+        title="Privacy Policy"
+        description="Read the Tees & Hoodies Hub privacy policy. Learn how we collect, use, and protect your personal information when you shop with us."
+        canonical="/privacy"
+      />
       <div className="container max-w-3xl">
         <motion.div {...fadeInUp} className="text-center">
           <p className="technical-label mb-3">Legal</p>

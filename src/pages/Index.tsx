@@ -8,6 +8,7 @@ import { useProducts } from "@/hooks/use-products";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel";
 import { listCategories, listHeroImages } from "@/lib/supabaseApi";
 import { defaultHeroImageUrls } from "@/lib/heroDefaults";
+import SEOHead from "@/components/SEOHead";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 12 },
@@ -216,6 +217,35 @@ export default function HomePage() {
 
   return (
     <main>
+      <SEOHead
+        title="Premium Streetwear from Accra, Ghana"
+        description="Shop heavyweight 450-500 GSM tees, hoodies, and custom prints from Accra, Ghana. Culture-first streetwear designed for everyday wear. Free delivery in Accra on orders above GHC 1000."
+        canonical="/"
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "Tees & Hoodies Hub",
+            "url": "https://teesandhoodies.com",
+            "logo": "https://teesandhoodies.com/favicon.svg",
+            "description": "Premium heavyweight streetwear from Accra, Ghana",
+            "contactPoint": { "@type": "ContactPoint", "email": "hello@teesandhoodies.com", "contactType": "customer service" },
+            "sameAs": ["https://instagram.com/teesandhoodies"],
+            "address": { "@type": "PostalAddress", "addressLocality": "Accra", "addressCountry": "GH" }
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Tees & Hoodies Hub",
+            "url": "https://teesandhoodies.com",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://teesandhoodies.com/shop?q={search_term_string}",
+              "query-input": "required name=search_term_string"
+            }
+          }
+        ]}
+      />
       {/* Hero */}
       <section ref={heroSectionRef} className="relative overflow-hidden h-[100svh]">
         <Carousel setApi={setHeroApi} opts={{ loop: true }} className="h-full">

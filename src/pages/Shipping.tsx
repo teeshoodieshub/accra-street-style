@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import SEOHead from "@/components/SEOHead";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 12 },
@@ -10,6 +11,11 @@ const fadeInUp = {
 export default function ShippingPage() {
   return (
     <main className="pt-28 pb-16">
+      <SEOHead
+        title="Shipping & Delivery"
+        description="Shipping and delivery information for Tees & Hoodies Hub. 1-3 day delivery in Accra, nationwide and international shipping available. Order tracking included."
+        canonical="/shipping"
+      />
       <div className="container max-w-3xl">
         <motion.div {...fadeInUp} className="text-center">
           <p className="technical-label mb-3">Support</p>

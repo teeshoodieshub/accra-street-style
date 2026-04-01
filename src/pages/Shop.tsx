@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { listCategories } from "@/lib/supabaseApi";
 import ProductCard from "@/components/ProductCard";
 import { useProducts } from "@/hooks/use-products";
+import SEOHead from "@/components/SEOHead";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 12 },
@@ -27,6 +28,11 @@ export default function ShopPage() {
 
   return (
     <main className="pt-28 pb-16">
+      <SEOHead
+        title="Shop Collection"
+        description="Browse our full collection of premium heavyweight tees, hoodies, and sleeveless cuts. 450-500 GSM cotton, relaxed street fit, made in Ghana. Shop by category and find your perfect piece."
+        canonical="/shop"
+      />
       <div className="container">
         <motion.div {...fadeInUp} className="text-center mb-14">
           <p className="technical-label mb-3">Browse</p>

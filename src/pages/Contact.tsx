@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { MessageCircle, Instagram, Mail, Send } from "lucide-react";
+import SEOHead from "@/components/SEOHead";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 12 },
@@ -21,6 +22,20 @@ export default function ContactPage() {
 
   return (
     <main className="pt-28 pb-16">
+      <SEOHead
+        title="Contact Us"
+        description="Get in touch with Tees & Hoodies Hub. Reach us via WhatsApp, Instagram, or email at hello@teesandhoodies.com. Based in Accra, Ghana."
+        canonical="/contact"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "LocalBusiness",
+          "name": "Tees & Hoodies Hub",
+          "email": "hello@teesandhoodies.com",
+          "url": "https://teesandhoodies.com/contact",
+          "address": { "@type": "PostalAddress", "addressLocality": "Accra", "addressRegion": "Greater Accra", "addressCountry": "GH" },
+          "sameAs": ["https://instagram.com/teesandhoodies"]
+        }}
+      />
       <div className="container max-w-3xl">
         <motion.div {...fadeInUp} className="text-center">
           <p className="technical-label mb-3">Get in Touch</p>

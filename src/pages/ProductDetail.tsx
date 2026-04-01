@@ -1,10 +1,11 @@
-﻿import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Minus, Plus, Check, ShieldCheck, Truck, RefreshCw, ZoomIn, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import ProductCard from "@/components/ProductCard";
 import { useProducts } from "@/hooks/use-products";
+import SEOHead from "@/components/SEOHead";
 
 const colorNames: Record<string, string> = {
   "#111": "Black",
@@ -291,6 +292,28 @@ export default function ProductPage() {
   return (
     <>
       <main className="pt-24 pb-16">
+      <SEOHead
+        title={product.name}
+        description={product.description || `Shop ${product.name} from Tees & Hoodies Hub. Premium heavyweight streetwear crafted in Accra, Ghana. ${product.specs || ""}`}
+        canonical={`/product/${product.id}`}
+        ogImage={product.images?.[0]}
+        ogType="product"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "name": product.name,
+          "image": product.images || [],
+          "description": product.description || "",
+          "brand": { "@type": "Brand", "name": "Tees & Hoodies Hub" },
+          "offers": {
+            "@type": "Offer",
+            "price": product.price,
+            "priceCurrency": "GHS",
+            "availability": "https://schema.org/InStock",
+            "url": `https://teesandhoodies.com/product/${product.id}`
+          }
+        }}
+      />
       <div className="container">
         <Link to="/shop" className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors mb-10">
           <ArrowLeft className="w-3 h-3" /> Back to Collection

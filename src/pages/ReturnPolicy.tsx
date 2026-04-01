@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import SEOHead from "@/components/SEOHead";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 12 },
@@ -10,6 +11,11 @@ const fadeInUp = {
 export default function ReturnPolicyPage() {
   return (
     <main className="pt-28 pb-16">
+      <SEOHead
+        title="Return Policy"
+        description="Tees & Hoodies Hub return and exchange policy. 14-day returns on unworn items with tags attached. Easy process for refunds and exchanges."
+        canonical="/returns"
+      />
       <div className="container max-w-3xl">
         <motion.div {...fadeInUp} className="text-center">
           <p className="technical-label mb-3">Support</p>

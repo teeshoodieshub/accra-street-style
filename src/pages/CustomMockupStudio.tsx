@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useCart } from '@/context/CartContext';
 import { createProduct, uploadProductImage } from '@/lib/supabaseApi';
+import SEOHead from '@/components/SEOHead';
 
 // Color swatches matching the reference image grid
 const COLOR_SWATCHES = [
@@ -434,6 +435,11 @@ export default function CustomMockupStudio() {
 
   return (
     <div className="pt-20 min-h-screen bg-white dark:bg-zinc-950">
+      <SEOHead
+        title="Design Studio"
+        description="Create your own custom apparel mockups with Tees & Hoodies Hub's interactive design studio. Upload designs, add text, choose colors, and preview on real product templates."
+        canonical="/custom-studio"
+      />
       {/* Step Headers */}
       <div className="flex items-center gap-12 px-8 py-5 border-b border-gray-200 dark:border-zinc-800">
         <h2 className="text-2xl font-bold text-foreground font-serif">

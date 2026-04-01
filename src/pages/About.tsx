@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import SEOHead from "@/components/SEOHead";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 12 },
@@ -10,6 +11,11 @@ const fadeInUp = {
 export default function AboutPage() {
   return (
     <main className="pt-28 pb-16">
+      <SEOHead
+        title="About Us"
+        description="Tees & Hoodies Hub was born in the creative heart of Accra — Osu. We craft 450-500 GSM heavyweight streetwear inspired by West African culture. Founded in 2023, designed in Accra for the world."
+        canonical="/about"
+      />
       <div className="container max-w-3xl">
         <motion.div {...fadeInUp} className="text-center">
           <p className="technical-label mb-3">Our Story</p>
