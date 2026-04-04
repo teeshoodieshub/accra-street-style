@@ -1,8 +1,8 @@
 export type DcmPaymentResult = {
   success?: boolean;
   status?: string;
-  message?: string;
-  error?: string;
+  message?: unknown;
+  error?: unknown;
   responseCode?: string | number;
   paymentId?: string | number;
   nameEnquiryTransactionID?: string;
@@ -11,6 +11,16 @@ export type DcmPaymentResult = {
     nameEnquiry?: unknown;
     collection?: unknown;
   };
+};
+
+type DcmPaymentNode = {
+  collectionTransactionID?: string | number;
+  error?: unknown;
+  message?: unknown;
+  nameEnquiryTransactionID?: string;
+  paymentId?: string | number;
+  responseCode?: string | number;
+  status?: string | number;
 };
 
 export type DcmPaymentPhase = "pending" | "completed" | "failed";
@@ -55,17 +65,84 @@ function normalizeValue(value: string | number | undefined | null) {
   return String(value ?? "").trim().toLowerCase();
 }
 
+function asPaymentNode(value: unknown): DcmPaymentNode | null {
+  return value && typeof value === "object" ? (value as DcmPaymentNode) : null;
+}
+
+function extractTextValue(value: unknown, depth = 0): string {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (typeof value === "number") {
+    return String(value);
+  }
+
+  if (!value || typeof value !== "object" || depth > 2) {
+    return "";
+  }
+
+  const record = value as Record<string, unknown>;
+  const priorityKeys = [
+    "message",
+    "error",
+    "details",
+    "description",
+    "responseMessage",
+    "statusText",
+    "status",
+  ];
+
+  for (const key of priorityKeys) {
+    const nestedText = extractTextValue(record[key], depth + 1);
+    if (nestedText) {
+      return nestedText;
+    }
+  }
+
+  for (const nestedValue of Object.values(record)) {
+    const nestedText = extractTextValue(nestedValue, depth + 1);
+    if (nestedText) {
+      return nestedText;
+    }
+  }
+
+  return "";
+}
+
+function getPaymentNodes(paymentResult: DcmPaymentResult) {
+  const collectionNode = asPaymentNode(paymentResult.data?.collection);
+  const topLevelNode = asPaymentNode(paymentResult);
+  const nameEnquiryNode = asPaymentNode(paymentResult.data?.nameEnquiry);
+
+  return [collectionNode, topLevelNode, nameEnquiryNode].filter(
+    (node): node is DcmPaymentNode => Boolean(node)
+  );
+}
+
 export function getDcmPaymentReference(paymentResult: DcmPaymentResult) {
-  return String(
-    paymentResult.collectionTransactionID ??
-      paymentResult.nameEnquiryTransactionID ??
-      paymentResult.paymentId ??
-      ""
-  ).trim();
+  for (const node of getPaymentNodes(paymentResult)) {
+    const reference = String(
+      node.collectionTransactionID ?? node.nameEnquiryTransactionID ?? node.paymentId ?? ""
+    ).trim();
+
+    if (reference) {
+      return reference;
+    }
+  }
+
+  return "";
 }
 
 export function getDcmProviderMessage(paymentResult: DcmPaymentResult) {
-  return String(paymentResult.message ?? paymentResult.error ?? "").trim();
+  for (const node of getPaymentNodes(paymentResult)) {
+    const message = extractTextValue(node.message) || extractTextValue(node.error);
+    if (message) {
+      return message;
+    }
+  }
+
+  return "";
 }
 
 export function getPaymentPhaseFromStatus(status: string | undefined | null): DcmPaymentPhase {
@@ -83,19 +160,33 @@ export function getPaymentPhaseFromStatus(status: string | undefined | null): Dc
 }
 
 export function getDcmPaymentOutcome(paymentResult: DcmPaymentResult): DcmPaymentOutcome {
-  const rawStatus = normalizeValue(paymentResult.status);
-  const responseCode = String(paymentResult.responseCode ?? "").trim();
+  const statuses = getPaymentNodes(paymentResult)
+    .map((node) => normalizeValue(node.status))
+    .filter(Boolean);
+  const rawStatus = statuses[0] ?? "";
+  const responseCodes = getPaymentNodes(paymentResult)
+    .map((node) => String(node.responseCode ?? "").trim())
+    .filter(Boolean);
   const providerMessage = getDcmProviderMessage(paymentResult);
   const reference = getDcmPaymentReference(paymentResult);
 
-  const hasAcceptedPendingStatus = ACCEPTED_PENDING_STATUSES.has(rawStatus);
-  const hasFailedStatus = FAILED_STATUSES.has(rawStatus);
+  const hasAcceptedPendingStatus = statuses.some((status) => ACCEPTED_PENDING_STATUSES.has(status));
+  const hasCompletedStatus = statuses.some((status) => COMPLETED_STATUSES.has(status));
+  const hasFailedStatus = statuses.some((status) => FAILED_STATUSES.has(status));
   const hasPositiveMessage = POSITIVE_MESSAGE_PATTERN.test(providerMessage);
   const hasStrongPositiveMessage = STRONG_POSITIVE_MESSAGE_PATTERN.test(providerMessage);
   const hasNegativeMessage = NEGATIVE_MESSAGE_PATTERN.test(providerMessage);
-  const hasSuccessCode = responseCode === "000";
+  const hasSuccessCode = responseCodes.some((responseCode) => responseCode === "000");
+  const hasPositiveSignals =
+    hasAcceptedPendingStatus ||
+    hasCompletedStatus ||
+    hasSuccessCode ||
+    paymentResult.success === true ||
+    hasStrongPositiveMessage ||
+    Boolean(reference && hasPositiveMessage);
+  const hasNegativeSignals = hasFailedStatus || hasNegativeMessage || paymentResult.success === false;
 
-  if (hasFailedStatus || hasNegativeMessage || paymentResult.success === false) {
+  if (hasNegativeSignals && !hasPositiveSignals) {
     return {
       accepted: false,
       phase: "failed",
@@ -105,16 +196,12 @@ export function getDcmPaymentOutcome(paymentResult: DcmPaymentResult): DcmPaymen
     };
   }
 
-  if (
-    hasAcceptedPendingStatus ||
-    COMPLETED_STATUSES.has(rawStatus) ||
-    hasSuccessCode ||
-    paymentResult.success === true ||
-    hasStrongPositiveMessage ||
-    (reference && hasPositiveMessage)
-  ) {
+  if (hasPositiveSignals) {
+    const positiveStatus = statuses.find((status) => ACCEPTED_PENDING_STATUSES.has(status));
     const pendingStatus =
-      rawStatus && NORMALIZED_PENDING_STATUSES.has(rawStatus) ? rawStatus : "initiated";
+      positiveStatus && NORMALIZED_PENDING_STATUSES.has(positiveStatus)
+        ? positiveStatus
+        : "initiated";
 
     return {
       accepted: true,

@@ -19,6 +19,7 @@ import SizeGuide from "./pages/SizeGuide.tsx";
 import CustomPrints from "./pages/CustomPrints.tsx";
 import CustomMockupStudio from "./pages/CustomMockupStudio.tsx";
 import Checkout from "./pages/Checkout.tsx";
+import PaymentStatus from "./pages/PaymentStatus.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import AdminLogin from "./pages/admin/AdminLogin.tsx";
 import AdminSignup from "./pages/admin/AdminSignup.tsx";
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="/custom-prints" element={<CustomPrints />} />
               <Route path="/custom-studio" element={<CustomMockupStudio />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/payment-status" element={<PaymentStatus />} />
               <Route path="*" element={<NotFound />} />
             </Route>
             

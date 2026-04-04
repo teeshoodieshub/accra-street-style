@@ -472,9 +472,17 @@ export async function updateOrderPaymentState(
   paymentResult: DcmPaymentResult
 ): Promise<void> {
   const outcome = getDcmPaymentOutcome(paymentResult);
+  await setOrderPaymentSnapshot(orderId, outcome.status, outcome.reference);
+}
+
+export async function setOrderPaymentSnapshot(
+  orderId: string,
+  paymentStatus: string,
+  paymentReference?: string | null
+): Promise<void> {
   const payload = {
-    payment_status: outcome.status,
-    ...(outcome.reference ? { payment_reference: outcome.reference } : {}),
+    payment_status: paymentStatus,
+    ...(paymentReference ? { payment_reference: paymentReference } : {}),
   };
 
   const { error } = await supabase

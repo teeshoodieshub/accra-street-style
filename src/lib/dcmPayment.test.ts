@@ -75,6 +75,63 @@ describe("getDcmPaymentOutcome", () => {
     });
   });
 
+  it("treats contradictory failed status plus strong success response as pending", () => {
+    const outcome = getDcmPaymentOutcome({
+      status: "failed",
+      message: "Payment processed successfully",
+      collectionTransactionID: "MSH-1775302145447",
+    });
+
+    expect(outcome).toMatchObject({
+      accepted: true,
+      phase: "pending",
+      status: "initiated",
+      reference: "MSH-1775302145447",
+      providerMessage: "Payment processed successfully",
+    });
+  });
+
+  it("prefers nested collection success data over conflicting top-level failure", () => {
+    const outcome = getDcmPaymentOutcome({
+      status: "failed",
+      message: "Request failed",
+      data: {
+        collection: {
+          status: "success",
+          message: "Collection request submitted",
+          responseCode: "000",
+          collectionTransactionID: "nested-123",
+        },
+      },
+    });
+
+    expect(outcome).toMatchObject({
+      accepted: true,
+      phase: "pending",
+      status: "initiated",
+      reference: "nested-123",
+      providerMessage: "Collection request submitted",
+    });
+  });
+
+  it("extracts readable provider text from object messages", () => {
+    const outcome = getDcmPaymentOutcome({
+      status: "success",
+      message: {
+        message: "Payment processed successfully",
+      },
+      collectionTransactionID: "obj-001",
+    });
+
+    expect(outcome).toMatchObject({
+      accepted: true,
+      phase: "pending",
+      status: "initiated",
+      reference: "obj-001",
+      providerMessage: "Payment processed successfully",
+    });
+  });
+
   it("maps stored order payment statuses to their display phase", () => {
     expect(getPaymentPhaseFromStatus("completed")).toBe("completed");
     expect(getPaymentPhaseFromStatus("failed")).toBe("failed");
